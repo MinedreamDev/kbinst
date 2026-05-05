@@ -157,6 +157,45 @@
             margin-bottom: 20px;
             text-align: center;
         }
+
+        .files-list {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .file-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #e8e8ff;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            font-size: 18px;
+            min-width: 25px;
+        }
+
+        .file-info {
+            flex: 1;
+            word-break: break-all;
+            font-size: 13px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -170,36 +209,68 @@
         <div class="error-message" id="errorMessage"></div>
         
         <form id="downloadForm">
-            <!-- Option 1: URL directe -->
+            <!-- Informations du repo GitHub -->
             <div class="form-group">
-                <label for="fileUrl">URL du fichier:</label>
+                <label for="repoOwner">Propriétaire du repo GitHub:</label>
                 <input 
-                    type="url" 
-                    id="fileUrl" 
-                    placeholder="https://exemple.com/fichier.pdf"
+                    type="text" 
+                    id="repoOwner" 
+                    placeholder="ex: MinedreamDev"
+                    value="MinedreamDev"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="repoName">Nom du repo:</label>
+                <input 
+                    type="text" 
+                    id="repoName" 
+                    placeholder="ex: kbinst"
+                    value="kbinst"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="branch">Branche:</label>
+                <input 
+                    type="text" 
+                    id="branch" 
+                    placeholder="ex: main"
+                    value="main"
+                >
+            </div>
+
+            <!-- Charger les fichiers -->
+            <div class="form-group">
+                <button type="button" id="loadFilesBtn" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    📂 Charger les fichiers
+                </button>
+            </div>
+
+            <!-- Liste des fichiers -->
+            <div id="filesContainer" style="display: none;">
+                <label>Fichiers disponibles:</label>
+                <div class="files-list" id="filesList"></div>
+            </div>
+
+            <!-- Chemin du fichier -->
+            <div class="form-group">
+                <label for="filePath">Chemin du fichier:</label>
+                <input 
+                    type="text" 
+                    id="filePath" 
+                    placeholder="ex: README.md ou assets/app.apk"
                     required
                 >
             </div>
             
-            <!-- Option 2: Sélectionner un fichier local -->
-            <div class="form-group">
-                <label>Ou sélectionner un fichier:</label>
-                <div class="file-input-wrapper">
-                    <label for="fileInput" class="file-input-label">
-                        📁 Cliquez ou déposez un fichier
-                    </label>
-                    <input type="file" id="fileInput">
-                    <span class="file-name" id="fileName"></span>
-                </div>
-            </div>
-            
             <!-- Nom du fichier de sortie -->
             <div class="form-group">
-                <label for="fileName">Nom du fichier de sortie:</label>
+                <label for="outputFileName">Nom du fichier de sortie:</label>
                 <input 
                     type="text" 
                     id="outputFileName" 
-                    placeholder="exemple.pdf"
+                    placeholder="ex: app.apk"
                 >
             </div>
             
@@ -210,60 +281,128 @@
         <div class="info-box">
             <strong>ℹ️ Instructions:</strong>
             <ul style="margin-left: 20px; margin-top: 10px;">
-                <li>Entrez l'URL du fichier à télécharger, ou</li>
-                <li>Sélectionnez un fichier de votre ordinateur</li>
-                <li>Optionnel: Personnalisez le nom du fichier</li>
+                <li>Entrez les informations du repo GitHub</li>
+                <li>Cliquez sur "Charger les fichiers" pour voir la liste</li>
+                <li>Cliquez sur un fichier ou entrez le chemin manuellement</li>
                 <li>Cliquez sur "Télécharger"</li>
             </ul>
         </div>
     </div>
     
     <script>
-        const form = document.getElementById('downloadForm');
-        const fileUrlInput = document.getElementById('fileUrl');
-        const fileInput = document.getElementById('fileInput');
+        const repoOwnerInput = document.getElementById('repoOwner');
+        const repoNameInput = document.getElementById('repoName');
+        const branchInput = document.getElementById('branch');
+        const filePathInput = document.getElementById('filePath');
         const outputFileNameInput = document.getElementById('outputFileName');
+        const loadFilesBtn = document.getElementById('loadFilesBtn');
+        const filesContainer = document.getElementById('filesContainer');
+        const filesList = document.getElementById('filesList');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
-        const fileNameDisplay = document.getElementById('fileName');
-        
-        // Afficher le nom du fichier sélectionné
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                fileNameDisplay.textContent = `Fichier sélectionné: ${fileName}`;
+        const form = document.getElementById('downloadForm');
+
+        // Fonction pour obtenir l'icône du fichier
+        function getFileIcon(fileName) {
+            const ext = fileName.toLowerCase().split('.').pop();
+            const icons = {
+                'exe': '⚙️',
+                'apk': '📱',
+                'xapk': '📦',
+                'pdf': '📄',
+                'zip': '📦',
+                'rar': '📦',
+                '7z': '📦',
+                'txt': '📝',
+                'json': '📋',
+                'xml': '🔖',
+                'md': '📖',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'mp4': '🎬',
+                'mp3': '🎵',
+                'wav': '🎵',
+                'avi': '🎬',
+                'doc': '📑',
+                'docx': '📑',
+                'xls': '📊',
+                'xlsx': '📊',
+                'ppt': '📊',
+                'pptx': '📊',
+                'html': '🌐',
+                'css': '🎨',
+                'js': '⚡',
+                'py': '🐍',
+                'java': '☕',
+                'cpp': '⚙️',
+                'c': '⚙️',
+            };
+            return icons[ext] || '📄';
+        }
+
+        // Charger les fichiers du repo
+        loadFilesBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const owner = repoOwnerInput.value;
+            const repo = repoNameInput.value;
+            const branch = branchInput.value;
+
+            if (!owner || !repo || !branch) {
+                errorMessage.textContent = '❌ Veuillez remplir tous les champs du repo';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                errorMessage.style.display = 'none';
+                loadFilesBtn.textContent = '⏳ Chargement...';
+                loadFilesBtn.disabled = true;
+
+                const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+                const response = await fetch(url);
                 
-                // Pré-remplir le champ de sortie
-                if (!outputFileNameInput.value) {
-                    outputFileNameInput.value = fileName;
+                if (!response.ok) {
+                    throw new Error('Repo non trouvé ou accès refusé');
                 }
-                
-                // Effacer l'URL
-                fileUrlInput.value = '';
+
+                const data = await response.json();
+                const files = data.tree.filter(item => item.type === 'blob');
+
+                filesList.innerHTML = '';
+                files.forEach(file => {
+                    const icon = getFileIcon(file.path);
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerHTML = `
+                        <span class="file-icon">${icon}</span>
+                        <span class="file-info">${file.path}</span>
+                    `;
+                    item.addEventListener('click', () => {
+                        filePathInput.value = file.path;
+                        if (!outputFileNameInput.value) {
+                            outputFileNameInput.value = file.path.split('/').pop();
+                        }
+                    });
+                    filesList.appendChild(item);
+                });
+
+                filesContainer.style.display = 'block';
+                loadFilesBtn.textContent = '✓ Fichiers chargés!';
+                setTimeout(() => {
+                    loadFilesBtn.textContent = '📂 Charger les fichiers';
+                    loadFilesBtn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                errorMessage.textContent = `❌ Erreur: ${error.message}`;
+                errorMessage.style.display = 'block';
+                loadFilesBtn.textContent = '📂 Charger les fichiers';
+                loadFilesBtn.disabled = false;
             }
         });
-        
-        // Gérer le glisser-déposer
-        const fileInputWrapper = document.querySelector('.file-input-wrapper');
-        
-        fileInputWrapper.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileInputWrapper.style.background = '#e8e8ff';
-        });
-        
-        fileInputWrapper.addEventListener('dragleave', () => {
-            fileInputWrapper.style.background = '';
-        });
-        
-        fileInputWrapper.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileInputWrapper.style.background = '';
-            fileInput.files = e.dataTransfer.files;
-            
-            // Déclencher l'événement change
-            fileInput.dispatchEvent(new Event('change'));
-        });
-        
+
         // Soumettre le formulaire
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -272,53 +411,35 @@
             errorMessage.style.display = 'none';
             
             try {
-                if (fileInput.files.length > 0) {
-                    // Télécharger depuis un fichier local
-                    const file = fileInput.files[0];
-                    const fileName = outputFileNameInput.value || file.name;
-                    
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(file);
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    successMessage.style.display = 'block';
-                } else if (fileUrlInput.value) {
-                    // Télécharger depuis une URL
-                    const url = fileUrlInput.value;
-                    const fileName = outputFileNameInput.value || url.split('/').pop() || 'fichier.bin';
-                    
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP: ${response.status}`);
-                    }
-                    
-                    const blob = await response.blob();
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    successMessage.style.display = 'block';
-                } else {
-                    throw new Error('Veuillez fournir une URL ou sélectionner un fichier');
+                const owner = repoOwnerInput.value;
+                const repo = repoNameInput.value;
+                const branch = branchInput.value;
+                const filePath = filePathInput.value;
+                const fileName = outputFileNameInput.value || filePath.split('/').pop();
+
+                if (!owner || !repo || !branch || !filePath) {
+                    throw new Error('Veuillez remplir tous les champs requis');
                 }
+
+                const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Fichier non trouvé (HTTP ${response.status})`);
+                }
+
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                successMessage.style.display = 'block';
             } catch (error) {
                 errorMessage.textContent = `❌ Erreur: ${error.message}`;
                 errorMessage.style.display = 'block';
-            }
-        });
-        
-        // Rendre le champ URL optionnel si un fichier est sélectionné
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                fileUrlInput.removeAttribute('required');
-            } else {
-                fileUrlInput.setAttribute('required', 'required');
             }
         });
     </script>

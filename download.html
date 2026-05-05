@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Télécharger un fichier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="url"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px dashed #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .file-input-label:hover {
+            background: #e8e8ff;
+            border-color: #764ba2;
+        }
+        
+        .file-name {
+            display: block;
+            margin-top: 8px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 25px;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .success-message {
+            display: none;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 Télécharger un fichier</h1>
+        
+        <div class="success-message" id="successMessage">
+            ✓ Fichier téléchargé avec succès!
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <form id="downloadForm">
+            <!-- Option 1: URL directe -->
+            <div class="form-group">
+                <label for="fileUrl">URL du fichier:</label>
+                <input 
+                    type="url" 
+                    id="fileUrl" 
+                    placeholder="https://exemple.com/fichier.pdf"
+                    required
+                >
+            </div>
+            
+            <!-- Option 2: Sélectionner un fichier local -->
+            <div class="form-group">
+                <label>Ou sélectionner un fichier:</label>
+                <div class="file-input-wrapper">
+                    <label for="fileInput" class="file-input-label">
+                        📁 Cliquez ou déposez un fichier
+                    </label>
+                    <input type="file" id="fileInput">
+                    <span class="file-name" id="fileName"></span>
+                </div>
+            </div>
+            
+            <!-- Nom du fichier de sortie -->
+            <div class="form-group">
+                <label for="fileName">Nom du fichier de sortie:</label>
+                <input 
+                    type="text" 
+                    id="outputFileName" 
+                    placeholder="exemple.pdf"
+                >
+            </div>
+            
+            <!-- Bouton de téléchargement -->
+            <button type="submit">📥 Télécharger</button>
+        </form>
+        
+        <div class="info-box">
+            <strong>ℹ️ Instructions:</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Entrez l'URL du fichier à télécharger, ou</li>
+                <li>Sélectionnez un fichier de votre ordinateur</li>
+                <li>Optionnel: Personnalisez le nom du fichier</li>
+                <li>Cliquez sur "Télécharger"</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('downloadForm');
+        const fileUrlInput = document.getElementById('fileUrl');
+        const fileInput = document.getElementById('fileInput');
+        const outputFileNameInput = document.getElementById('outputFileName');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const fileNameDisplay = document.getElementById('fileName');
+        
+        // Afficher le nom du fichier sélectionné
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                fileNameDisplay.textContent = `Fichier sélectionné: ${fileName}`;
+                
+                // Pré-remplir le champ de sortie
+                if (!outputFileNameInput.value) {
+                    outputFileNameInput.value = fileName;
+                }
+                
+                // Effacer l'URL
+                fileUrlInput.value = '';
+            }
+        });
+        
+        // Gérer le glisser-déposer
+        const fileInputWrapper = document.querySelector('.file-input-wrapper');
+        
+        fileInputWrapper.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileInputWrapper.style.background = '#e8e8ff';
+        });
+        
+        fileInputWrapper.addEventListener('dragleave', () => {
+            fileInputWrapper.style.background = '';
+        });
+        
+        fileInputWrapper.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileInputWrapper.style.background = '';
+            fileInput.files = e.dataTransfer.files;
+            
+            // Déclencher l'événement change
+            fileInput.dispatchEvent(new Event('change'));
+        });
+        
+        // Soumettre le formulaire
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            try {
+                if (fileInput.files.length > 0) {
+                    // Télécharger depuis un fichier local
+                    const file = fileInput.files[0];
+                    const fileName = outputFileNameInput.value || file.name;
+                    
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(file);
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    successMessage.style.display = 'block';
+                } else if (fileUrlInput.value) {
+                    // Télécharger depuis une URL
+                    const url = fileUrlInput.value;
+                    const fileName = outputFileNameInput.value || url.split('/').pop() || 'fichier.bin';
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP: ${response.status}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    successMessage.style.display = 'block';
+                } else {
+                    throw new Error('Veuillez fournir une URL ou sélectionner un fichier');
+                }
+            } catch (error) {
+                errorMessage.textContent = `❌ Erreur: ${error.message}`;
+                errorMessage.style.display = 'block';
+            }
+        });
+        
+        // Rendre le champ URL optionnel si un fichier est sélectionné
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileUrlInput.removeAttribute('required');
+            } else {
+                fileUrlInput.setAttribute('required', 'required');
+            }
+        });
+    </script>
+</body>
+</html>
